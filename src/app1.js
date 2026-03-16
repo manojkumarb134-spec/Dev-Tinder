@@ -21,3 +21,6 @@ app.get('/user/:userId/:name',(req, res)=>{
 app.listen(3000,()=>{ // callback function to run when the server starts
     console.log('Server is running on port 3000');
 })
+
+// Current IP Address (124.123.191.13/32) added!
+// Visit Network Access to modify your settings.

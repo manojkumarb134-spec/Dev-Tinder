@@ -1,15 +1,37 @@
-const express = require('express');
-const {adminAuth, userAuth} = require('./middleware/auth');
+const express = require("express");
 const app = express();
+const connetDB = require("./config/database");
+const User = require("./models/user");
+app.use(express.json());
+app.post('/signUp', async(req, res)=>{
+   
+    // Handle sign-up logic here with static data for now  
+    // const user = new User({
+    //     firstName: "Bonkoori",
+    //     lastName: "swetha",
+    //     emailId: "swetha134gmail.com",
+    //     password: "manoj123"
+    // })
 
-app.use("/admin", adminAuth);
-app.use("/user", userAuth, (req, res, next) => {
-    res.send("Welcome to the user dashboard!");
-});
-app.get('/admin/dashboard', (req, res) => {
-    res.send("Welcome to the admin dashboard!");
-});
+    // dynamic data from request body 
+     const data = req.body;
+    const user = new User(data);
 
-app.listen(3000,()=>{ 
+    try {       
+         await user.save();
+        res.send("User signed up successfully!");
+    } catch (err) {
+        console.error("Error signing up user", err);
+        res.status(500).send("Error signing up user");
+    }
+})
+// Connect to the database
+connetDB().then(()=>{
+    console.log("Connected to MongoDB, successfully!");
+    app.listen(3000,()=>{
     console.log('Server is running on port 3000');
 });
+}).catch((err)=>{
+    console.error("Error connecting to MongoDB", err);
+});
+
