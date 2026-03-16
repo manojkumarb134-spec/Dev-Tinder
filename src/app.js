@@ -25,7 +25,7 @@ app.post('/signUp', async(req, res)=>{
         res.status(500).send("Error signing up user");
     }
 })
-// Connect to the database
+// Connect to the database and start the server 
 connetDB().then(()=>{
     console.log("Connected to MongoDB, successfully!");
     app.listen(3000,()=>{
