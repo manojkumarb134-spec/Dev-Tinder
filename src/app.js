@@ -50,6 +50,34 @@ app.get("/feed", async(req, res)=>{
   }
 });
 
+// Endpoint to update user details by emailId
+app.patch("/user",async(req, res)=>{
+    const userId = req.body.userId;
+    try{
+        const updatedUser = await User.findByIdAndUpdate({_id: userId}, req.body, {new: true});
+        res.send(updatedUser);
+    }catch(err){
+        console.error("Error updating user", err);
+        res.status(500).send("Error updating user");
+
+    }
+
+})
+
+// Endpoint to delete user by emailId
+app.delete("/user", async(req, res)=>{
+    const userId = req.body.userId;
+    try{
+        await User.findByIdAndDelete({_id: userId}, {returnDocument: "after"});
+        res.send("User deleted successfully!");
+    }catch(err){
+        console.error("Error deleting user", err); 
+        res.status(500).send("Error deleting user");
+    }
+});
+
+
+
 // Connect to the database and start the server 
 connetDB().then(()=>{
     console.log("Connected to MongoDB, successfully!");
