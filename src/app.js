@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const connetDB = require("./config/database");
 const User = require("./models/user");
+// Middleware to parse JSON request bodies
 app.use(express.json());
 app.post('/signUp', async(req, res)=>{
    
@@ -25,6 +26,30 @@ app.post('/signUp', async(req, res)=>{
         res.status(500).send("Error signing up user");
     }
 })
+
+// Endpoint to fetch user by emailId 
+app.get('/user',async(req, res)=>{
+    const emailId = req.body.emailId;
+  try{
+    const users = await User.find({ emailId: emailId });
+    res.send(users);
+  }catch(err){
+    console.error("Error fetching user", err);
+    res.status(500).send("Error fetching user");
+  }
+});
+
+// Endpoint to fetch all users (for testing purposes)
+app.get("/feed", async(req, res)=>{
+  try{
+    const users = await User.find({});
+    res.send(users);
+  }catch(err){
+    console.error("Error fetching user", err);
+    res.status(500).send("Error fetching user");
+  }
+});
+
 // Connect to the database and start the server 
 connetDB().then(()=>{
     console.log("Connected to MongoDB, successfully!");
