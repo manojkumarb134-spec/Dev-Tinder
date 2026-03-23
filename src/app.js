@@ -54,7 +54,11 @@ app.get("/feed", async(req, res)=>{
 app.patch("/user",async(req, res)=>{
     const userId = req.body.userId;
     try{
-        const updatedUser = await User.findByIdAndUpdate({_id: userId}, req.body, {new: true});
+        const updatedUser = await User.findByIdAndUpdate({_id: userId}, req.body,
+             {new: true},{
+                runValidators: true,
+                returnDocument: "after"
+        });
         res.send(updatedUser);
     }catch(err){
         console.error("Error updating user", err);
