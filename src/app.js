@@ -1,25 +1,24 @@
-const express = require("express");
+const express = require('express');
 const app = express();
 const connetDB = require("./config/database");
-const User = require("./models/user");
 const { validateSignUpdata } = require("./utils/validator");
 const bcrypt = require("bcrypt");
-// Middleware to parse JSON request bodies
+const User = require("./models/user");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middleware/auth");
+// Middleware to parse JSON request bodies and cookies from incoming requests 
 app.use(express.json());
-app.post('/signUp', async (req, res) => {
+// cookie parser middleware to parse cookies from incoming requests 
+app.use(cookieParser());
 
-    // Handle sign-up logic here with static data for now  
-    // const user = new User({
-    //     firstName: "Bonkoori",
-    //     lastName: "swetha",
-    //     emailId: "swetha134gmail.com",
-    //     password: "manoj123"
-    // })
+app.post('/signUp', async (req, res) => {
     try {
         validateSignUpdata(req);
         // dynamic data from request body 
         const data = req.body;
         const pwd = data.password;
+        console.log("Received sign-up data:", pwd);
         // Hash the password before saving to the database
         const hashedPassword = await bcrypt.hash(pwd, 10);
         data.password = hashedPassword;
@@ -31,95 +30,41 @@ app.post('/signUp', async (req, res) => {
         res.status(500).send("Error signing up user");
     }
 })
-
-app.post("/login", async(req, res)=>{
-  const { emailId, password } = req.body;
-  try {
-    const user = await User.findOne({ emailId: emailId });
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).send("Invalid password");
-    }
-    res.send("Login successful!");
-  } catch (err) {
-    console.error("Error logging in", err);
-    res.status(500).send("Error logging in");
-  }
-
-});
-
-// Endpoint to fetch user by emailId 
-app.get('/user', async (req, res) => {
-    const emailId = req.body.emailId;
+app.post("/login", async (req, res) => {
+    const { emailId, password } = req.body;
     try {
-        const users = await User.find({ emailId: emailId });
-        res.send(users);
-    } catch (err) {
-        console.error("Error fetching user", err);
-        res.status(500).send("Error fetching user");
-    }
-});
-
-// Endpoint to fetch all users (for testing purposes)
-app.get("/feed", async (req, res) => {
-    try {
-        const users = await User.find({});
-        res.send(users);
-    } catch (err) {
-        console.error("Error fetching user", err);
-        res.status(500).send("Error fetching user");
-    }
-});
-
-// Endpoint to update user details by emailId
-app.patch("/user", async (req, res) => {
-    const userId = req.body.userId;
-    const updateData = req.body;
-    try {
-        const ALLOED_UPDTE_FIELD = [
-            'userId',
-            "age",
-            "gender",
-            "about"
-        ]
-        const isValidate = Object.keys(updateData).every((k) => {
-            return ALLOED_UPDTE_FIELD.includes(k);
-        })
-        if (!isValidate) {
-            return res.status(400).send("Update not allowed");
+        const user = await User.findOne({ emailId: emailId });
+        if (!user) {
+            return res.status(404).send("User not found");
         }
-
-        const updatedUser = await User.findByIdAndUpdate({ _id: userId }, req.body,
-            { new: true }, {
-            runValidators: true,
-            returnDocument: "after"
-        });
-        res.send(updatedUser);
-    } catch (err) {
-        console.error("Error updating user", err);
-        res.status(500).send("Error updating user");
-
+        // Compare the provided password with the hashed password stored in the database
+        const isMatch = await user.validatePassword(password);
+        if (!isMatch) {
+            return res.status(401).send("Invalid password");
+        } else {
+            const token = await user.getJWTToken();
+            res.cookie("token", token);
+            res.status(200).send("Login successful");
+        }
     }
-
-})
-
-// Endpoint to delete user by emailId
-app.delete("/user", async (req, res) => {
-    const userId = req.body.userId;
-    try {
-        await User.findByIdAndDelete({ _id: userId }, { returnDocument: "after" });
-        res.send("User deleted successfully!");
-    } catch (err) {
-        console.error("Error deleting user", err);
-        res.status(500).send("Error deleting user");
+    catch (err) {
+        console.error("Error logging in", err);
+        res.status(400).send("Error:" + err.message);
     }
 });
 
-
-
+app.get("/profile", userAuth, async (req, res) => {
+    try {
+        const user = req.user; // Access the authenticated user from the request object
+        if (!user) {
+            return res.status(404).send("User not found");
+        }
+        res.send(user); // Send the user profile as the response
+    } catch (err) {
+        console.error("Error fetching user profile", err);
+        res.status(400).send("Error:" + err.message);
+    }
+})
 // Connect to the database and start the server 
 connetDB().then(() => {
     console.log("Connected to MongoDB, successfully!");
