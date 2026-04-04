@@ -3,6 +3,7 @@ const app = express();
 const connetDB = require("./config/database");
 const authRouter = require('./routers/auth');
 const profileRouter = require('./routers/profileRouter');
+const requestRouter = require("./routers/request");
 const cookieParser = require("cookie-parser");
 // Middleware to parse JSON request bodies and cookies from incoming requests 
 app.use(express.json());
@@ -10,6 +11,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/", authRouter);
 app.use("/", profileRouter);
+app.use("/", requestRouter);
 // Connect to the database and start the server 
 connetDB().then(() => {
     console.log("Connected to MongoDB, successfully!");
