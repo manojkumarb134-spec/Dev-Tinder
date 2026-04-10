@@ -3,6 +3,7 @@ const mangoose = require("mongoose");
 const connectionRequeSchema = new mangoose.Schema({
     fromUserId: {
         type: mangoose.Schema.Types.ObjectId,
+        ref: "User",
         required: true
     },
     toUserId: {
