@@ -14,8 +14,10 @@ authRouter.post('/signup', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         data.password = hashedPassword
         const user = new User(data);
-        await user.save();
-        res.send("User signed up successfully!");
+        const savedUser = await user.save();
+        const token = await savedUser.getJWTToken();
+        res.cookie("token", token);
+        res.json({message: "User signed up successfully!", data: savedUser});
 
     } catch (err) {
         console.error("Error signing up user", err);
@@ -28,7 +30,7 @@ authRouter.post('/login', async (req, res) => {
         const { emailId, password } = req.body;
         const user = await User.findOne({ emailId });
         if (!user) {
-            return res.status(404).send("User not found");
+            return res.status(404).send({message: "User not found"});
         }
         const isMatch = await user.validatePassword(password);
         if (!isMatch) {
